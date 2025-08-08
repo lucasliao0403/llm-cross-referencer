@@ -1,0 +1,203 @@
+import type { NextApiRequest, NextApiResponse } from "next";
+import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { CohereClientV2 } from "cohere-ai";
+
+type NdjsonEvent = {
+  model: "openai" | "anthropic" | "google" | "cohere";
+  type: "start" | "delta" | "end" | "error";
+  text?: string;
+  error?: string;
+};
+
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+};
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).end("Method Not Allowed");
+  }
+
+  const { prompt } = req.body as { prompt?: string };
+  if (!prompt || typeof prompt !== "string") {
+    return res.status(400).json({ error: "Missing prompt" });
+  }
+
+  res.writeHead(200, {
+    "Content-Type": "application/x-ndjson; charset=utf-8",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive",
+    "Transfer-Encoding": "chunked",
+  });
+
+  const write = (event: NdjsonEvent) => {
+    res.write(JSON.stringify(event) + "\n");
+  };
+
+  // Model IDs via env with sensible defaults
+  const openaiModel = process.env.OPENAI_MODEL || "gpt-4o-mini"; // cheaper, widely available
+  const anthropicModel =
+    process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-latest";
+  const googleModel =
+    process.env.GOOGLE_MODEL || "gemini-1.5-pro-latest"; // replace with gemini-2.5-pro when available
+  const cohereModel = process.env.COHERE_MODEL || "command-a-03-2025";
+
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+  const googleApiKey = process.env.GOOGLE_API_KEY;
+  const cohereApiKey = process.env.COHERE_API_KEY;
+
+  const tasks: Array<Promise<void>> = [];
+
+  if (openaiApiKey) {
+    tasks.push(
+      (async () => {
+        write({ model: "openai", type: "start" });
+        try {
+          const openai = new OpenAI({ apiKey: openaiApiKey });
+          const stream = await openai.chat.completions.create({
+            model: openaiModel,
+            messages: [{ role: "user", content: prompt }],
+            stream: true,
+          });
+          for await (const part of stream) {
+            const delta = part.choices?.[0]?.delta?.content;
+            if (typeof delta === "string" && delta.length > 0) {
+              write({ model: "openai", type: "delta", text: delta });
+            }
+          }
+          write({ model: "openai", type: "end" });
+        } catch (err: any) {
+          const quotaMsg =
+            err?.status === 429 || err?.statusCode === 429
+              ? "OpenAI: quota exceeded (429). Check plan/billing or use a smaller model like gpt-4o-mini."
+              : undefined;
+          write({
+            model: "openai",
+            type: "error",
+            error: quotaMsg || err?.message || "OpenAI error",
+          });
+        }
+      })()
+    );
+  } else {
+    write({ model: "openai", type: "error", error: "Missing OPENAI_API_KEY" });
+  }
+
+  if (anthropicApiKey) {
+    tasks.push(
+      (async () => {
+        write({ model: "anthropic", type: "start" });
+        try {
+          const anthropic = new Anthropic({ apiKey: anthropicApiKey });
+          const stream = await anthropic.messages.create({
+            model: anthropicModel,
+            max_tokens: 4096,
+            messages: [{ role: "user", content: prompt }],
+            stream: true,
+          });
+
+          for await (const event of stream) {
+            if (event.type === "content_block_delta") {
+              const anyEvent = event as any;
+              if (anyEvent?.delta?.type === "text_delta") {
+                const t: string | undefined = anyEvent.delta.text;
+                if (t) write({ model: "anthropic", type: "delta", text: t });
+              }
+            }
+          }
+          write({ model: "anthropic", type: "end" });
+        } catch (err: any) {
+          write({
+            model: "anthropic",
+            type: "error",
+            error: err?.message || "Anthropic error",
+          });
+        }
+      })()
+    );
+  } else {
+    write({
+      model: "anthropic",
+      type: "error",
+      error: "Missing ANTHROPIC_API_KEY",
+    });
+  }
+
+  if (googleApiKey) {
+    tasks.push(
+      (async () => {
+        write({ model: "google", type: "start" });
+        try {
+          const genAI = new GoogleGenerativeAI(googleApiKey);
+          const model = genAI.getGenerativeModel({ model: googleModel });
+          const result = await model.generateContentStream(prompt);
+          for await (const chunk of result.stream) {
+            const t = chunk.text();
+            if (t) write({ model: "google", type: "delta", text: t });
+          }
+          write({ model: "google", type: "end" });
+        } catch (err: any) {
+          write({
+            model: "google",
+            type: "error",
+            error: err?.message || "Google error",
+          });
+        }
+      })()
+    );
+  } else {
+    write({ model: "google", type: "error", error: "Missing GOOGLE_API_KEY" });
+  }
+
+  if (cohereApiKey) {
+    tasks.push(
+      (async () => {
+        write({ model: "cohere", type: "start" });
+        try {
+          const cohere = new CohereClientV2({ token: cohereApiKey });
+          const stream = await cohere.chatStream({
+            model: cohereModel,
+            messages: [{ role: "user", content: prompt }],
+          });
+          for await (const event of stream) {
+            if (event.type === "content-delta") {
+              const anyEvent = event as any;
+              const text: string | undefined =
+                anyEvent?.delta?.message?.content?.text ??
+                (typeof anyEvent?.delta?.message === "string"
+                  ? anyEvent.delta.message
+                  : undefined);
+              if (text) write({ model: "cohere", type: "delta", text });
+            }
+          }
+          write({ model: "cohere", type: "end" });
+        } catch (err: any) {
+          write({
+            model: "cohere",
+            type: "error",
+            error: err?.message || "Cohere error",
+          });
+        }
+      })()
+    );
+  } else {
+    write({ model: "cohere", type: "error", error: "Missing COHERE_API_KEY" });
+  }
+
+  try {
+    await Promise.all(tasks);
+  } finally {
+    res.end();
+  }
+}
+
+
