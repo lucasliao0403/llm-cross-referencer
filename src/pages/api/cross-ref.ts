@@ -31,6 +31,9 @@ export default async function handler(
     return res.status(400).json({ error: "Missing prompt" });
   }
 
+  // LaTeX instruction as system message
+  const latexInstruction = "IMPORTANT: When writing mathematical expressions, you must use proper LaTeX formatting:\n- For inline math: $expression$ (example: $\\sin x$, $\\frac{d}{dx}$)\n- For display math: $$expression$$ (example: $$\\frac{d}{dx}(\\sin x) = \\cos x$$)\n- Never use brackets [ ] or parentheses ( ) around math expressions\n- Always wrap math symbols and equations in dollar signs";
+
   res.writeHead(200, {
     "Content-Type": "application/x-ndjson; charset=utf-8",
     "Cache-Control": "no-cache, no-transform",
@@ -63,11 +66,14 @@ export default async function handler(
         write({ model: "openai", type: "start" });
         try {
           const openai = new OpenAI({ apiKey: openaiApiKey });
-          const stream = await openai.chat.completions.create({
-            model: openaiModel,
-            messages: [{ role: "user", content: prompt }],
-            stream: true,
-          });
+                  const stream = await openai.chat.completions.create({
+          model: openaiModel,
+          messages: [
+            { role: "system", content: latexInstruction },
+            { role: "user", content: prompt }
+          ],
+          stream: true,
+        });
           for await (const part of stream) {
             const delta = part.choices?.[0]?.delta?.content;
             if (typeof delta === "string" && delta.length > 0) {
@@ -101,6 +107,7 @@ export default async function handler(
           const stream = await anthropic.messages.create({
             model: anthropicModel,
             max_tokens: 4096,
+            system: latexInstruction,
             messages: [{ role: "user", content: prompt }],
             stream: true,
           });
@@ -139,7 +146,7 @@ export default async function handler(
         try {
           const genAI = new GoogleGenerativeAI(googleApiKey);
           const model = genAI.getGenerativeModel({ model: googleModel });
-          const result = await model.generateContentStream(prompt);
+          const result = await model.generateContentStream(`${latexInstruction}\n\n${prompt}`);
           for await (const chunk of result.stream) {
             const t = chunk.text();
             if (t) write({ model: "google", type: "delta", text: t });
@@ -166,7 +173,10 @@ export default async function handler(
           const cohere = new CohereClientV2({ token: cohereApiKey });
           const stream = await cohere.chatStream({
             model: cohereModel,
-            messages: [{ role: "user", content: prompt }],
+            messages: [
+              { role: "system", content: latexInstruction },
+              { role: "user", content: prompt }
+            ],
           });
           for await (const event of stream) {
             if (event.type === "content-delta") {

@@ -1,30 +1,16 @@
 @import "tailwindcss";
+@import "katex/dist/katex.min.css";
 
-:root {
-  /* Cream + Black palette */
-  --bg-from: #fffbf4; /* warm cream */
-  --bg-to: #f6efe6;   /* subtle paper */
-  --ink: #111111;     /* rich black */
-  --ink-muted: #3f3f46; /* zinc-700-ish */
-  --card: rgba(255, 255, 255, 0.72);
-  --card-border: rgba(17, 17, 17, 0.10);
-
-  /* Accents kept minimal in this aesthetic */
-  --accent: #111111;
-  --accent-2: #111111;
-
-  /* Buttons */
-  --btn-bg-top: #ffffff;
-  --btn-bg-bottom: #fbf5eb; /* gentle cream */
-}
-
-@theme inline {
-  --color-ink: var(--ink);
-  --color-ink-muted: var(--ink-muted);
-  --color-card: var(--card);
-  --color-card-border: var(--card-border);
-  --color-accent: var(--accent);
-  --color-accent-2: var(--accent-2);
+@theme {
+  --color-cream-from: #fffbf4;
+  --color-cream-to: #f6efe6;
+  --color-ink: #111111;
+  --color-ink-muted: #3f3f46;
+  --color-card-bg: rgba(255, 255, 255, 0.72);
+  --color-card-border: rgba(17, 17, 17, 0.10);
+  --color-btn-top: #ffffff;
+  --color-btn-bottom: #fbf5eb;
+  
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-serif);
@@ -35,115 +21,49 @@ html, body {
 }
 
 body {
-  color: var(--ink);
-  background: linear-gradient(160deg, var(--bg-from), var(--bg-to));
-  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
-    Segoe UI, Roboto, Noto Sans, Ubuntu, Cantarell, Helvetica Neue, Arial,
-    "Apple Color Emoji", "Segoe UI Emoji";
+  color: #111111;
+  background: linear-gradient(160deg, #fffbf4, #f6efe6);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Subtle retro-futuristic grain */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image: radial-gradient(
-      circle at 18% 12%, rgba(17, 17, 17, 0.06), transparent 42%
-    ),
+  background-image: 
+    radial-gradient(circle at 18% 12%, rgba(17, 17, 17, 0.06), transparent 42%),
     radial-gradient(circle at 82% 22%, rgba(17, 17, 17, 0.05), transparent 44%),
     radial-gradient(circle at 40% 86%, rgba(17, 17, 17, 0.04), transparent 46%);
   mix-blend-mode: multiply;
 }
 
-.glass {
-  background: var(--card);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--card-border);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 2px rgba(0, 0, 0, 0.06);
-}
+@layer components {
+  .glass {
+    @apply bg-card-bg/72 backdrop-blur-[16px] border border-card-border shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_1px_2px_rgba(0,0,0,0.06)];
+  }
 
-.retro-heading {
-  font-family: var(--font-serif), ui-serif, Georgia, Cambria, Times, serif;
-  letter-spacing: -0.01em;
-}
+  .retro-heading {
+    @apply font-serif tracking-tight text-ink;
+  }
 
-/* Neo-retro pill button */
-.neo-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1rem; /* 10px 16px */
-  border-radius: 9999px;
-  color: var(--ink);
-  background: linear-gradient(180deg, var(--btn-bg-top), var(--btn-bg-bottom));
-  border: 1px solid rgba(17, 17, 17, 0.85);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    0 10px 24px rgba(0, 0, 0, 0.06),
-    0 1px 2px rgba(0, 0, 0, 0.12);
-  transition: transform 120ms ease, box-shadow 150ms ease, background 200ms ease;
-  cursor: pointer;
-}
+  .neo-btn {
+    @apply relative inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-ink bg-gradient-to-b from-btn-top to-btn-bottom border border-ink/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_10px_24px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.12)] transition-all duration-200 cursor-pointer overflow-hidden hover:-translate-y-0.5 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_16px_32px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.14)] hover:text-white active:translate-y-0 active:shadow-[inset_0_0_0_rgba(0,0,0,0),0_8px_18px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.12)] text-center;
+  }
 
-.neo-btn:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 16px 32px rgba(0, 0, 0, 0.08),
-    0 2px 4px rgba(0, 0, 0, 0.14);
-}
+  .neo-btn::before {
+    @apply content-[''] absolute bottom-0 left-0 right-0 h-0 bg-ink rounded-full transition-all duration-300 -z-10;
+  }
 
-.neo-btn:active {
-  transform: translateY(0);
-  box-shadow:
-    inset 0 0 0 rgba(0, 0, 0, 0),
-    0 8px 18px rgba(0, 0, 0, 0.06),
-    0 1px 2px rgba(0, 0, 0, 0.12);
-}
+  .neo-btn:hover::before {
+    @apply h-full;
+  }
 
-.neo-btn::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 25%;
-  width: 50%;
-  border-radius: inherit;
-  background: linear-gradient(120deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 60%);
-  transform: translateX(-20%);
-  transition: transform 400ms ease;
-}
+  .neo-btn-icon {
+    @apply relative z-10;
+  }
 
-.neo-btn:hover::after {
-  transform: translateX(20%);
-}
-
-.neo-btn-icon {
-  width: 18px;
-  height: 18px;
-  border-radius: 9999px;
-  background: #111;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
-}
-
-/* Chat textarea with tasteful outline */
-.chat-textarea {
-  border: none; /* remove outline */
-  border-radius: 12px;
-  background: transparent;
-  padding: 0.75rem 0.75rem;
-  transition: background 150ms ease;
-}
-
-.chat-textarea::placeholder {
-  color: rgba(63, 63, 70, 0.6);
-}
-
-.chat-textarea:focus {
-  outline: none;
-  background: rgba(255, 255, 255, 0.55);
+  .chat-textarea {
+    @apply border-0 rounded-xl p-3 transition-colors duration-200 outline-none focus:bg-white/55;
+  }
 }
