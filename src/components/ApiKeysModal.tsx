@@ -101,9 +101,9 @@ export default function ApiKeysModal({ isOpen, onClose }: ApiKeysModalProps) {
               {/* Header */}
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h2 className="retro-heading text-2xl font-medium">API Settings</h2>
+                  <h2 className="retro-heading text-2xl font-medium">Settings</h2>
                   <p className="text-sm text-ink-muted/80 mt-1">
-                    Enter your own API keys
+                    Configure API keys and choose models.
                   </p>
                 </div>
                 <button

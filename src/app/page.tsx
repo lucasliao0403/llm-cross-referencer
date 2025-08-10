@@ -271,7 +271,7 @@ Provide a neutral summary of what each source said:`;
                   </svg>
                 </div>  
                 <p className="text-xs text-blue-800/80 whitespace-nowrap">
-                  <span className="font-medium text-blue-900">No data is stored.</span> Your API keys are stored locally and sent directly to AI providers.
+                  <span className="font-medium text-blue-900">Your data is never stored.</span> This open source project stores API keys locally and sends them directly to AI providers.
                 </p>
               </div>
             </div>
@@ -514,8 +514,6 @@ Provide a neutral summary of what each source said:`;
               GitHub
             </a>
           </div>
-          <span>•</span>
-          <span>No data stored</span>
           <span>•</span>
           <span>2025</span>
         </div>
