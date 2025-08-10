@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
+import { Analytics } from '@vercel/analytics/react';
 import { ApiKeysProvider } from "../contexts/ApiKeysContext";
 import "./globals.css";
 
@@ -41,6 +42,7 @@ export default function RootLayout({
         <ApiKeysProvider>
           {children}
         </ApiKeysProvider>
+        <Analytics />
       </body>
     </html>
   );

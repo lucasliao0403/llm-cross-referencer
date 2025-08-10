@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.58.0",
     "@google/generative-ai": "^0.24.1",
     "@tailwindcss/typography": "^0.5.16",
+    "@vercel/analytics": "^1.5.0",
     "cohere-ai": "^7.18.0",
     "framer-motion": "^12.23.12",
     "next": "15.4.6",
