@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
+import { ApiKeysProvider } from "../contexts/ApiKeysContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,7 +38,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${newsReader.variable} antialiased`}
       >
-        {children}
+        <ApiKeysProvider>
+          {children}
+        </ApiKeysProvider>
       </body>
     </html>
   );

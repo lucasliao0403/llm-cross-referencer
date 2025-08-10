@@ -16,13 +16,15 @@
   --font-serif: var(--font-serif);
 }
 
-html, body {
-  height: 100%;
+html {
+  min-height: 100%;
+  background: linear-gradient(160deg, #fffbf4 0%, #f8f1e8 30%, #f0e4d2 60%, #e8d5bb 100%);
+  background-attachment: fixed;
 }
 
 body {
+  min-height: 100%;
   color: #111111;
-  background: linear-gradient(160deg, #fffbf4, #f6efe6);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 

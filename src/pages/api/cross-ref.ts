@@ -26,7 +26,15 @@ export default async function handler(
     return res.status(405).end("Method Not Allowed");
   }
 
-  const { prompt } = req.body as { prompt?: string };
+  const { prompt, apiKeys } = req.body as { 
+    prompt?: string; 
+    apiKeys?: {
+      openai?: string;
+      anthropic?: string;
+      google?: string;
+      cohere?: string;
+    };
+  };
   if (!prompt || typeof prompt !== "string") {
     return res.status(400).json({ error: "Missing prompt" });
   }
@@ -48,15 +56,16 @@ export default async function handler(
   // Model IDs via env with sensible defaults
   const openaiModel = process.env.OPENAI_MODEL || "gpt-4o-mini"; // cheaper, widely available
   const anthropicModel =
-    process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-latest";
+    process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514";
   const googleModel =
     process.env.GOOGLE_MODEL || "gemini-1.5-pro-latest"; // replace with gemini-2.5-pro when available
   const cohereModel = process.env.COHERE_MODEL || "command-a-03-2025";
 
-  const openaiApiKey = process.env.OPENAI_API_KEY;
-  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
-  const googleApiKey = process.env.GOOGLE_API_KEY;
-  const cohereApiKey = process.env.COHERE_API_KEY;
+  // Only use user-provided API keys
+  const openaiApiKey = apiKeys?.openai?.trim();
+  const anthropicApiKey = apiKeys?.anthropic?.trim();
+  const googleApiKey = apiKeys?.google?.trim();
+  const cohereApiKey = apiKeys?.cohere?.trim();
 
   const tasks: Array<Promise<void>> = [];
 
@@ -94,9 +103,8 @@ export default async function handler(
         }
       })()
     );
-  } else {
-    write({ model: "openai", type: "error", error: "Missing OPENAI_API_KEY" });
   }
+  // Don't show error for missing OpenAI key - just skip the model
 
   if (anthropicApiKey) {
     tasks.push(
@@ -131,13 +139,8 @@ export default async function handler(
         }
       })()
     );
-  } else {
-    write({
-      model: "anthropic",
-      type: "error",
-      error: "Missing ANTHROPIC_API_KEY",
-    });
   }
+  // Don't show error for missing Anthropic key - just skip the model
 
   if (googleApiKey) {
     tasks.push(
@@ -161,9 +164,8 @@ export default async function handler(
         }
       })()
     );
-  } else {
-    write({ model: "google", type: "error", error: "Missing GOOGLE_API_KEY" });
   }
+  // Don't show error for missing Google key - just skip the model
 
   if (cohereApiKey) {
     tasks.push(
@@ -199,9 +201,8 @@ export default async function handler(
         }
       })()
     );
-  } else {
-    write({ model: "cohere", type: "error", error: "Missing COHERE_API_KEY" });
   }
+  // Don't show error for missing Cohere key - just skip the model
 
   try {
     await Promise.all(tasks);
