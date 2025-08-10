@@ -19,7 +19,7 @@ const newsReader = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: "LLM Cross Referencer",
+  title: "Cross Referencer",
   description: "Compare responses from multiple LLMs side-by-side",
   icons: {
     icon: '/favicon.svg',

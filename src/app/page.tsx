@@ -403,7 +403,7 @@ Provide a neutral summary of what each source said:`;
            </motion.div>
          ) : (
          <div className={`grid gap-5 ${
-           availableModels.length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
+           availableModels.length === 1 ? 'grid-cols-1' :
            availableModels.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
            availableModels.length === 3 ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' :
            'grid-cols-1 md:grid-cols-2 xl:grid-cols-4'
@@ -485,8 +485,8 @@ Provide a neutral summary of what each source said:`;
         </div>
          )}
       </main>
-             <footer className="w-full max-w-6xl px-4 sm:px-6 md:px-8 py-6 text-xs text-ink-muted/80 text-center">
-        Made by <a href="https://x.com/liao_lucas" target="_blank" rel="noopener noreferrer" className="text-ink/80 hover:text-ink transition-colors underline">Lucas Liao</a> • Powered by OpenAI, Anthropic, Google Gemini, and Cohere • 2025
+      <footer className="w-full max-w-6xl px-4 sm:px-6 md:px-8 py-6 text-sm text-ink-muted/80 text-center">
+        Made by <a href="https://x.com/liao_lucas" target="_blank" rel="noopener noreferrer" className="text-ink/80 hover:text-ink transition-colors underline">Lucas Liao</a> • 2025
       </footer>
       
       <ApiKeysModal 
