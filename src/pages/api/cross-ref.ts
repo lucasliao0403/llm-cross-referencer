@@ -83,20 +83,21 @@ export default async function handler(
           });
 
           for await (const event of stream) {
-            if (event.type === "content_block_delta") {
-              const anyEvent = event as any;
-              if (anyEvent?.delta?.type === "text_delta") {
-                const t: string | undefined = anyEvent.delta.text;
+            if (event.type === "content_block_delta" && 'delta' in event) {
+              const delta = event.delta;
+              if (delta.type === "text_delta" && 'text' in delta) {
+                const t: string | undefined = delta.text;
                 if (t) write({ model: "anthropic", type: "delta", text: t });
               }
             }
           }
           write({ model: "anthropic", type: "end" });
-        } catch (err: any) {
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : "Anthropic error";
           write({
             model: "anthropic",
             type: "error",
-            error: err?.message || "Anthropic error",
+            error: errorMessage,
           });
         }
       })()
@@ -125,15 +126,24 @@ export default async function handler(
             }
           }
           write({ model: "openai", type: "end" });
-        } catch (err: any) {
-          const quotaMsg =
-            err?.status === 429 || err?.statusCode === 429
-              ? "OpenAI: quota exceeded (429). Check plan/billing or use a smaller model like gpt-4o-mini."
-              : undefined;
+        } catch (err: unknown) {
+          const isQuotaError = (error: unknown): boolean => {
+            if (error && typeof error === 'object') {
+              const errorObj = error as { status?: number; statusCode?: number };
+              return errorObj.status === 429 || errorObj.statusCode === 429;
+            }
+            return false;
+          };
+          
+          const quotaMsg = isQuotaError(err)
+            ? "OpenAI: quota exceeded (429). Check plan/billing or use a smaller model like gpt-4o-mini."
+            : undefined;
+          
+          const errorMessage = err instanceof Error ? err.message : "OpenAI error";
           write({
             model: "openai",
             type: "error",
-            error: quotaMsg || err?.message || "OpenAI error",
+            error: quotaMsg || errorMessage,
           });
         }
       })()
@@ -157,11 +167,12 @@ export default async function handler(
             if (t) write({ model: "google", type: "delta", text: t });
           }
           write({ model: "google", type: "end" });
-        } catch (err: any) {
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : "Google error";
           write({
             model: "google",
             type: "error",
-            error: err?.message || "Google error",
+            error: errorMessage,
           });
         }
       })()
