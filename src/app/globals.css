@@ -84,12 +84,14 @@ body::before {
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
     border-radius: 0 24px 24px 0;
+    margin: 8px 8px 8px 0;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(17, 17, 17, 0.15);
     border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.3);
+    margin-right: 8px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -99,5 +101,6 @@ body::before {
   .custom-scrollbar::-webkit-scrollbar-corner {
     background: transparent;
     border-radius: 0 0 24px 0;
+    margin: 0 8px 8px 0;
   }
 }

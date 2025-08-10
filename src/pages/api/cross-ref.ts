@@ -2,10 +2,9 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { CohereClientV2 } from "cohere-ai";
 
 type NdjsonEvent = {
-  model: "openai" | "anthropic" | "google" | "cohere";
+  model: "anthropic" | "openai" | "google";
   type: "start" | "delta" | "end" | "error";
   text?: string;
   error?: string;
@@ -26,13 +25,17 @@ export default async function handler(
     return res.status(405).end("Method Not Allowed");
   }
 
-  const { prompt, apiKeys } = req.body as { 
+  const { prompt, apiKeys, selectedModels } = req.body as { 
     prompt?: string; 
     apiKeys?: {
-      openai?: string;
       anthropic?: string;
+      openai?: string;
       google?: string;
-      cohere?: string;
+    };
+    selectedModels?: {
+      anthropic?: string;
+      openai?: string;
+      google?: string;
     };
   };
   if (!prompt || typeof prompt !== "string") {
@@ -53,21 +56,53 @@ export default async function handler(
     res.write(JSON.stringify(event) + "\n");
   };
 
-  // Model IDs via env with sensible defaults
-  const openaiModel = process.env.OPENAI_MODEL || "gpt-4o-mini"; // cheaper, widely available
-  const anthropicModel =
-    process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514";
-  const googleModel =
-    process.env.GOOGLE_MODEL || "gemini-1.5-pro-latest"; // replace with gemini-2.5-pro when available
-  const cohereModel = process.env.COHERE_MODEL || "command-a-03-2025";
+  // Use selected models from the request, fallback to env, then defaults
+  const anthropicModel = selectedModels?.anthropic || process.env.ANTHROPIC_MODEL || "claude-opus-4-1-20250805";
+  const openaiModel = selectedModels?.openai || process.env.OPENAI_MODEL || "gpt-5";
+  const googleModel = selectedModels?.google || process.env.GOOGLE_MODEL || "gemini-2.5-pro";
 
   // Only use user-provided API keys
-  const openaiApiKey = apiKeys?.openai?.trim();
   const anthropicApiKey = apiKeys?.anthropic?.trim();
+  const openaiApiKey = apiKeys?.openai?.trim();
   const googleApiKey = apiKeys?.google?.trim();
-  const cohereApiKey = apiKeys?.cohere?.trim();
 
   const tasks: Array<Promise<void>> = [];
+
+  if (anthropicApiKey) {
+    tasks.push(
+      (async () => {
+        write({ model: "anthropic", type: "start" });
+        try {
+          const anthropic = new Anthropic({ apiKey: anthropicApiKey });
+          const stream = await anthropic.messages.create({
+            model: anthropicModel,
+            max_tokens: 4096,
+            system: latexInstruction,
+            messages: [{ role: "user", content: prompt }],
+            stream: true,
+          });
+
+          for await (const event of stream) {
+            if (event.type === "content_block_delta") {
+              const anyEvent = event as any;
+              if (anyEvent?.delta?.type === "text_delta") {
+                const t: string | undefined = anyEvent.delta.text;
+                if (t) write({ model: "anthropic", type: "delta", text: t });
+              }
+            }
+          }
+          write({ model: "anthropic", type: "end" });
+        } catch (err: any) {
+          write({
+            model: "anthropic",
+            type: "error",
+            error: err?.message || "Anthropic error",
+          });
+        }
+      })()
+    );
+  }
+  // Don't show error for missing Anthropic key - just skip the model
 
   if (openaiApiKey) {
     tasks.push(
@@ -106,42 +141,6 @@ export default async function handler(
   }
   // Don't show error for missing OpenAI key - just skip the model
 
-  if (anthropicApiKey) {
-    tasks.push(
-      (async () => {
-        write({ model: "anthropic", type: "start" });
-        try {
-          const anthropic = new Anthropic({ apiKey: anthropicApiKey });
-          const stream = await anthropic.messages.create({
-            model: anthropicModel,
-            max_tokens: 4096,
-            system: latexInstruction,
-            messages: [{ role: "user", content: prompt }],
-            stream: true,
-          });
-
-          for await (const event of stream) {
-            if (event.type === "content_block_delta") {
-              const anyEvent = event as any;
-              if (anyEvent?.delta?.type === "text_delta") {
-                const t: string | undefined = anyEvent.delta.text;
-                if (t) write({ model: "anthropic", type: "delta", text: t });
-              }
-            }
-          }
-          write({ model: "anthropic", type: "end" });
-        } catch (err: any) {
-          write({
-            model: "anthropic",
-            type: "error",
-            error: err?.message || "Anthropic error",
-          });
-        }
-      })()
-    );
-  }
-  // Don't show error for missing Anthropic key - just skip the model
-
   if (googleApiKey) {
     tasks.push(
       (async () => {
@@ -170,42 +169,7 @@ export default async function handler(
   }
   // Don't show error for missing Google key - just skip the model
 
-  if (cohereApiKey) {
-    tasks.push(
-      (async () => {
-        write({ model: "cohere", type: "start" });
-        try {
-          const cohere = new CohereClientV2({ token: cohereApiKey });
-          const stream = await cohere.chatStream({
-            model: cohereModel,
-            messages: [
-              { role: "system", content: latexInstruction },
-              { role: "user", content: prompt }
-            ],
-          });
-          for await (const event of stream) {
-            if (event.type === "content-delta") {
-              const anyEvent = event as any;
-              const text: string | undefined =
-                anyEvent?.delta?.message?.content?.text ??
-                (typeof anyEvent?.delta?.message === "string"
-                  ? anyEvent.delta.message
-                  : undefined);
-              if (text) write({ model: "cohere", type: "delta", text });
-            }
-          }
-          write({ model: "cohere", type: "end" });
-        } catch (err: any) {
-          write({
-            model: "cohere",
-            type: "error",
-            error: err?.message || "Cohere error",
-          });
-        }
-      })()
-    );
-  }
-  // Don't show error for missing Cohere key - just skip the model
+
 
   try {
     await Promise.all(tasks);

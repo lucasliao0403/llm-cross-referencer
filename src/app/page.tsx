@@ -12,7 +12,7 @@ import ApiKeysModal from "../components/ApiKeysModal";
 
 // Removed fallback math notation converter
 
-type ModelKey = "openai" | "anthropic" | "google" | "cohere";
+type ModelKey = "anthropic" | "openai" | "google";
 
 type NdjsonEvent = {
   model: ModelKey;
@@ -22,41 +22,37 @@ type NdjsonEvent = {
 };
 
 export default function Home() {
-  const { apiKeys, hasAnyKeys } = useApiKeys();
+  const { apiKeys, selectedModels, hasAnyKeys } = useApiKeys();
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showApiModal, setShowApiModal] = useState(false);
   const [messages, setMessages] = useState<Record<ModelKey, string>>({
-    openai: "",
     anthropic: "",
+    openai: "",
     google: "",
-    cohere: "",
   });
   const [errors, setErrors] = useState<Record<ModelKey, string | null>>({
-    openai: null,
     anthropic: null,
+    openai: null,
     google: null,
-    cohere: null,
   });
   const [evaluatorResult, setEvaluatorResult] = useState<string>("");
   const [evaluatorLoading, setEvaluatorLoading] = useState(false);
   const [evaluatorRan, setEvaluatorRan] = useState(false);
   const [modelStatus, setModelStatus] = useState<Record<ModelKey, 'pending' | 'streaming' | 'finished' | 'error'>>({
-    openai: 'pending',
     anthropic: 'pending',
+    openai: 'pending',
     google: 'pending',
-    cohere: 'pending',
   });
 
   const controllerRef = useRef<AbortController | null>(null);
   const allModels: { key: ModelKey; label: string }[] = useMemo(
     () => [
-      { key: "openai", label: "GPT-5" },
-      { key: "anthropic", label: "Claude 4 Sonnet" },
-      { key: "google", label: "Gemini 2.5 Pro" },
-      { key: "cohere", label: "Command A (03-2025)" },
+      { key: "anthropic", label: selectedModels?.anthropic || "Claude Opus 4.1" },
+      { key: "openai", label: selectedModels?.openai || "GPT-5" },
+      { key: "google", label: selectedModels?.google || "Gemini 2.5 Pro" },
     ],
-    []
+    [selectedModels]
   );
 
   // Only show models that have API keys
@@ -98,18 +94,17 @@ export default function Home() {
     e.preventDefault();
     if (!prompt.trim()) return;
     setIsLoading(true);
-    setMessages({ openai: "", anthropic: "", google: "", cohere: "" });
-    setErrors({ openai: null, anthropic: null, google: null, cohere: null });
+    setMessages({ anthropic: "", openai: "", google: "" });
+    setErrors({ anthropic: null, openai: null, google: null });
     setEvaluatorResult("");
     setEvaluatorLoading(false);
     setEvaluatorRan(false);
     
     // Only set status for active models (those with API keys)
     const newModelStatus: Record<ModelKey, 'pending' | 'streaming' | 'finished' | 'error'> = {
-      openai: 'pending',
       anthropic: 'pending',
+      openai: 'pending',
       google: 'pending',
-      cohere: 'pending',
     };
     
     // Set inactive models to 'finished' so they don't block the evaluator
@@ -127,7 +122,7 @@ export default function Home() {
       const res = await fetch("/api/cross-ref", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, apiKeys }),
+        body: JSON.stringify({ prompt, apiKeys, selectedModels }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) throw new Error("Request failed");
@@ -215,7 +210,7 @@ Provide a neutral summary of what each source said:`;
       const res = await fetch("/api/cross-ref", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: evaluationPrompt, apiKeys }),
+        body: JSON.stringify({ prompt: evaluationPrompt, apiKeys, selectedModels }),
       });
 
       if (!res.ok || !res.body) throw new Error("Evaluation failed");
