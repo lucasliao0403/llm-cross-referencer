@@ -97,7 +97,7 @@ export default function ApiKeysModal({ isOpen, onClose }: ApiKeysModalProps) {
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="glass rounded-3xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="glass rounded-3xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
               {/* Header */}
               <div className="flex items-center justify-between mb-8">
                 <div>
@@ -119,7 +119,7 @@ export default function ApiKeysModal({ isOpen, onClose }: ApiKeysModalProps) {
               {/* API Key Inputs */}
               <div className="space-y-6 mb-8">
                 {API_PROVIDERS.map(({ key, label, placeholder, description, color }) => (
-                  <div key={key} className="space-y-2">
+                  <div key={key} className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
                         <label className="text-sm font-medium text-ink/90">{label}</label>
@@ -141,14 +141,14 @@ export default function ApiKeysModal({ isOpen, onClose }: ApiKeysModalProps) {
                         value={localKeys[key]}
                         onChange={(e) => setLocalKeys(prev => ({ ...prev, [key]: e.target.value }))}
                         placeholder={placeholder}
-                        className="w-full px-4 py-3 rounded-xl border border-card-border bg-white/60 backdrop-blur-sm placeholder:text-ink-muted/50 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/20 transition-all"
+                        className="w-full px-4 py-3 pr-12 rounded-xl border border-card-border bg-white/60 backdrop-blur-sm placeholder:text-ink-muted/50 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/20 transition-all font-mono"
                       />
                       
                       {localKeys[key] && (
                         <button
                           type="button"
                           onClick={() => toggleShowKey(key)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-black/5 transition-colors"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-black/5 transition-colors z-10"
                         >
                           {showKeys[key] ? (
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-ink/60">
@@ -165,31 +165,21 @@ export default function ApiKeysModal({ isOpen, onClose }: ApiKeysModalProps) {
                         </button>
                       )}
                     </div>
-                    
-                    {localKeys[key] && !showKeys[key] && (
-                      <div className="text-xs text-ink-muted/60 font-mono">
-                        Key: {maskKey(localKeys[key])}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
 
               {/* Privacy Notice */}
-              <div className="bg-blue-50/60 border border-blue-200/60 rounded-xl p-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center mt-0.5">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-white">
+              <div className="bg-blue-50/60 border border-blue-200/60 rounded-xl p-3 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className="text-white">
                       <path d="M6 8.5V6M6 3.5H6.005M10.5 6C10.5 8.485 8.485 10.5 6 10.5C3.515 10.5 1.5 8.485 1.5 6C1.5 3.515 3.515 1.5 6 1.5C8.485 1.5 10.5 3.515 10.5 6Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
                     </svg>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-blue-900 mb-1">Privacy & Security</h4>
-                    <p className="text-xs text-blue-800/80 leading-relaxed">
-                      Your API keys are stored locally in your browser and sent directly to the respective AI providers. 
-                      They are never stored on our servers or transmitted to any third parties.
-                    </p>
-                  </div>
+                  <p className="text-xs text-blue-800/80">
+                    <span className="font-medium text-blue-900">Privacy:</span> Your API keys are stored locally and sent directly to AI providers. They are never stored on our servers.
+                  </p>
                 </div>
               </div>
 

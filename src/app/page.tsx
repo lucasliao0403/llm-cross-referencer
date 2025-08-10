@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { IoInformationCircle, IoSettings, IoStar } from "react-icons/io5";
+import { FaGithub } from "react-icons/fa";
 import { useApiKeys } from "../contexts/ApiKeysContext";
 import ApiKeysModal from "../components/ApiKeysModal";
 
@@ -252,7 +253,7 @@ Provide a neutral summary of what each source said:`;
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center">
+    <div className="min-h-screen flex flex-col items-center relative">
       <main className="w-full max-w-6xl px-4 sm:px-6 md:px-8 py-10 flex-1 flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div>
@@ -262,6 +263,18 @@ Provide a neutral summary of what each source said:`;
             <p className="text-sm text-ink-muted/80 mt-1">
               Compare answers from multiple LLMs in real time.
             </p>
+            <div className="bg-blue-50/60 border border-blue-200/60 rounded-xl p-3 mt-3">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className="text-white">
+                    <path d="M6 8.5V6M6 3.5H6.005M10.5 6C10.5 8.485 8.485 10.5 6 10.5C3.515 10.5 1.5 8.485 1.5 6C1.5 3.515 3.515 1.5 6 1.5C8.485 1.5 10.5 3.515 10.5 6Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                </div>  
+                <p className="text-xs text-blue-800/80 whitespace-nowrap">
+                  <span className="font-medium text-blue-900">No data is stored.</span> Your API keys are stored locally and sent directly to AI providers.
+                </p>
+              </div>
+            </div>
           </div>
           
           <div className="flex items-center gap-3">
@@ -485,8 +498,27 @@ Provide a neutral summary of what each source said:`;
         </div>
          )}
       </main>
-      <footer className="w-full max-w-6xl px-4 sm:px-6 md:px-8 py-6 text-sm text-ink-muted/80 text-center">
-        Made by <a href="https://x.com/liao_lucas" target="_blank" rel="noopener noreferrer" className="text-ink/80 hover:text-ink transition-colors underline">Lucas Liao</a> • 2025
+                   <footer className="w-full max-w-6xl px-4 sm:px-6 md:px-8 py-6 text-sm text-ink-muted/80 text-center">
+        <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center gap-1">
+            <span>Made by</span>
+            <a href="https://x.com/liao_lucas" target="_blank" rel="noopener noreferrer" className="text-ink/80 hover:text-ink transition-colors underline">
+              Lucas Liao
+            </a>
+          </div>
+          <span>•</span>
+          <div className="flex items-center gap-1">
+            <span>Open source on</span>
+            <a href="https://github.com/lucasliao0403/llm-cross-referencer" target="_blank" rel="noopener noreferrer" className="text-ink/80 hover:text-ink transition-colors underline inline-flex items-center gap-1">
+              <FaGithub className="text-sm" />
+              GitHub
+            </a>
+          </div>
+          <span>•</span>
+          <span>No data stored</span>
+          <span>•</span>
+          <span>2025</span>
+        </div>
       </footer>
       
       <ApiKeysModal 
