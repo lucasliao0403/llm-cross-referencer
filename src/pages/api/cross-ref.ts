@@ -148,8 +148,11 @@ export default async function handler(
         write({ model: "google", type: "start" });
         try {
           const genAI = new GoogleGenerativeAI(googleApiKey);
-          const model = genAI.getGenerativeModel({ model: googleModel });
-          const result = await model.generateContentStream(`${latexInstruction}\n\n${prompt}`);
+          const model = genAI.getGenerativeModel({ 
+            model: googleModel,
+            systemInstruction: latexInstruction
+          });
+          const result = await model.generateContentStream(prompt);
           for await (const chunk of result.stream) {
             const t = chunk.text();
             if (t) write({ model: "google", type: "delta", text: t });
